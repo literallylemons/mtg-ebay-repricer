@@ -2,6 +2,17 @@
   "pricing": {
     "normal_multiplier": 0.95,
     "foil_multiplier": 0.95,
-    "minimum_price": 0.99
+    "minimum_price": 0.99,
+    "condition_multipliers": {
+      "NM": 1.0,
+      "LP": 1.0,
+      "HP": 1.0,
+      "D": 1.0
+    }
+  },
+  "runtime": {
+    "dry_run": true,
+    "currency": "USD",
+    "marketplace_id": "EBAY_US"
   }
 }
