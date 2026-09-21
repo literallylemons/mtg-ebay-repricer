@@ -1,0 +1,7 @@
+{
+  "pricing": {
+    "normal_multiplier": 0.95,
+    "foil_multiplier": 0.95,
+    "minimum_price": 0.99
+  }
+}
