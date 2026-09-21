@@ -45,3 +45,19 @@ The program will only remove a listing from its local data after eBay explicitly
 Pricing rules are stored in `config.json` rather than hard-coded into the program. The default configuration currently applies a 95% multiplier to Scryfall's USD price with a $0.99 minimum price.
 
 The pricing system is designed so the rule can be changed without modifying the source code.
+
+
+## Operation
+
+The program defaults to dry-run mode. Dry-run mode calculates proposed prices and produces a report without changing eBay.
+
+eBay credentials are supplied through GitHub Actions secrets:
+- EBAY_CLIENT_ID
+- EBAY_CLIENT_SECRET
+- EBAY_REFRESH_TOKEN
+
+The scheduled workflow runs tests first, then the repricer, and uploads the generated report as a GitHub Actions artifact.
+
+Before enabling live repricing, verify the dry-run report with real eBay credentials. Change "runtime.dry_run" in config.json to false only after that verification.
+
+The repricer detects duplicate SKUs and malformed SKU/listing combinations and reports them instead of silently changing them.
