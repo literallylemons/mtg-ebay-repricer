@@ -21,11 +21,7 @@ def main():
 
     has_credentials = all(
         os.environ.get(name)
-        for name in (
-            "EBAY_CLIENT_ID",
-            "EBAY_CLIENT_SECRET",
-            "EBAY_REFRESH_TOKEN",
-        )
+        for name in ("EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET", "EBAY_REFRESH_TOKEN")
     )
 
     if has_credentials:
@@ -39,7 +35,6 @@ def main():
         raise RuntimeError("eBay credentials are required when dry_run is false.")
 
     plan = build_repricing_plan(offers, config)
-
     report["listings_checked"] = len(offers)
     report["price_changes"] = len(plan["updates"])
     report["no_changes"] = len(plan["no_changes"])
