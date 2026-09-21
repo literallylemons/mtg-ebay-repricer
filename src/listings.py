@@ -5,7 +5,8 @@ import re
 LISTINGS_FILE = Path("data/listings.json")
 
 SKU_PATTERN = re.compile(
-    r"^(?P<set>[A-Z0-9]+)-(?P<number>[1-9][0-9]*)-(?P<finish>FOIL|NORMAL)-(?P<condition>NM|LP|HP|D)$"
+    r"^(?P<set>[A-Z0-9]+)-(?P<number>[A-Z0-9★._/]+)-"
+    r"(?P<finish>FOIL|NORMAL)-(?P<condition>NM|LP|HP|D)$"
 )
 
 
@@ -22,6 +23,8 @@ def save_listings(listings):
 
 
 def parse_sku(sku):
+    if not isinstance(sku, str):
+        raise ValueError("SKU must be a string.")
     match = SKU_PATTERN.fullmatch(sku)
     if not match:
         raise ValueError(
@@ -36,7 +39,6 @@ def validate_listings(listings):
 
     for index, listing in enumerate(listings):
         sku = listing.get("sku")
-
         if not isinstance(sku, str):
             errors.append(f"Listing {index + 1}: missing SKU.")
             continue
@@ -44,7 +46,7 @@ def validate_listings(listings):
         try:
             parsed = parse_sku(sku)
         except ValueError as error:
-            errors.append(str(error))
+            errors.append(f"Listing {index + 1}: {error}")
             continue
 
         if sku in seen:
@@ -56,10 +58,10 @@ def validate_listings(listings):
             seen[sku] = index
 
         expected = {
-            "set": listing.get("set"),
-            "number": str(listing.get("collector_number", "")),
-            "finish": listing.get("finish"),
-            "condition": listing.get("condition"),
+            "set": str(listing.get("set", "")).upper(),
+            "number": str(listing.get("collector_number", "")).upper(),
+            "finish": str(listing.get("finish", "")).upper(),
+            "condition": str(listing.get("condition", "")).upper(),
         }
 
         for field in expected:
@@ -68,5 +70,27 @@ def validate_listings(listings):
                     f"SKU mismatch for '{sku}': {field} does not match "
                     f"the listing data."
                 )
-
     return errors
+
+
+def normalize_ebay_offer(offer):
+    sku = offer.get("sku")
+    parsed = parse_sku(sku)
+    price = offer.get("pricingSummary", {}).get("price", {})
+    listing = offer.get("listing", {})
+
+    return {
+        "sku": sku,
+        "set": parsed["set"],
+        "collector_number": parsed["number"],
+        "finish": parsed["finish"],
+        "condition": parsed["condition"],
+        "offer_id": str(offer.get("offerId", "")),
+        "listing_id": str(listing.get("listingId", "")),
+        "listing_status": listing.get("listingStatus"),
+        "status": offer.get("status"),
+        "marketplace_id": offer.get("marketplaceId"),
+        "currency": price.get("currency"),
+        "current_price": price.get("value"),
+        "quantity": offer.get("availableQuantity"),
+    }
