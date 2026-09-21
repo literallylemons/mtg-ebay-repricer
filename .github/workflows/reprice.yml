@@ -1,0 +1,43 @@
+name: MTG eBay Repricer
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  reprice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Run repricer
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+          EBAY_ENVIRONMENT: production
+        run: python -m src.main
+
+      - name: Upload repricing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repricing-report
+          path: reports/latest.json
+          if-no-files-found: ignore
