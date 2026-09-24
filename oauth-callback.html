@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eBay OAuth Callback</title>
+</head>
+<body>
+<h1>eBay OAuth Authorization Code</h1>
+
+<p id="status">Reading the eBay authorization response...</p>
+
+<div id="result" hidden>
+    <p>Authorization succeeded. The temporary authorization code is below.</p>
+    <p><strong>Do not post this code publicly or send it to anyone.</strong></p>
+
+    <textarea id="code" readonly style="width:100%;height:120px;"></textarea>
+    <br>
+    <button id="copy">Copy authorization code</button>
+</div>
+
+<p id="error" hidden></p>
+
+<script>
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const error = params.get("error");
+
+    if (error) {
+        document.getElementById("status").textContent =
+            "eBay authorization was not completed.";
+        const errorBox = document.getElementById("error");
+        errorBox.textContent = "eBay returned an error: " + error;
+        errorBox.hidden = false;
+        return;
+    }
+
+    if (!code) {
+        document.getElementById("status").textContent =
+            "No authorization code was found.";
+        return;
+    }
+
+    document.getElementById("status").textContent =
+        "Authorization code received.";
+
+    document.getElementById("result").hidden = false;
+    document.getElementById("code").value = code;
+
+    document.getElementById("copy").addEventListener("click", async function () {
+        try {
+            await navigator.clipboard.writeText(code);
+            this.textContent = "Copied";
+        } catch {
+            this.textContent = "Copy failed";
+        }
+    });
+
+    window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname
+    );
+})();
+</script>
+</body>
+</html>
