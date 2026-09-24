@@ -5,7 +5,7 @@ import re
 LISTINGS_FILE = Path("data/listings.json")
 
 SKU_PATTERN = re.compile(
-    r"^(?P<set>[A-Z0-9]+)-(?P<number>[A-Z0-9★._/]+)-"
+    r"^(?P<set>[A-Z0-9]+)-(?P<number>[1-9][A-Z0-9★._/]*)-"
     r"(?P<finish>FOIL|NORMAL)-(?P<condition>NM|LP|HP|D)$"
 )
 
