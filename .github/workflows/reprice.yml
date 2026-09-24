@@ -31,7 +31,7 @@ jobs:
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
           EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
           EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
-          EBAY_ENVIRONMENT: production
+          EBAY_ENVIRONMENT: sandbox
         run: python -m src.main
 
       - name: Upload repricing report
