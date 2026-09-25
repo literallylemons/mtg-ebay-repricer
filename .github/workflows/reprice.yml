@@ -17,6 +17,9 @@ concurrency:
 jobs:
   reprice:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -50,7 +53,4 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        environment:
-          name: github-pages
-          url: ${{ steps.deployment.outputs.page_url }}
         uses: actions/deploy-pages@v4
