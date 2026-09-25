@@ -1,0 +1,61 @@
+name: Delete ALL Sandbox Listings
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DELETE ALL to permanently end every active fixed-price Sandbox listing'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  delete-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Delete all active fixed-price Sandbox listings
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+          EBAY_ENVIRONMENT: sandbox
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          python - <<'PY'
+          import os
+          from src.ebay import EbayClient
+
+          if os.environ["CONFIRMATION"].strip() != "DELETE ALL":
+              raise SystemExit('Confirmation must be exactly "DELETE ALL". Nothing was deleted.')
+
+          client = EbayClient("sandbox")
+          listings = client.get_active_offers()
+
+          item_ids = []
+          seen = set()
+
+          for listing in listings:
+              item_id = str(listing.get("itemId") or listing.get("offerId") or "").strip()
+              if item_id and item_id not in seen:
+                  seen.add(item_id)
+                  item_ids.append(item_id)
+
+          print(f"Found {len(item_ids)} active fixed-price Sandbox listing(s).")
+
+          for item_id in item_ids:
+              print(f"Ending listing {item_id}...")
+              client.delete_listing(item_id=item_id)
+
+          print(f"Finished. Ended {len(item_ids)} Sandbox listing(s).")
+          PY
