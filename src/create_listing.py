@@ -22,7 +22,7 @@ def main():
         print("Existing Sandbox listing found.")
         print(f"SKU: {data['sku']}")
         print(f"Existing available quantity: {current_quantity}")
-        print(f"Added quantity: {data["quantity"]}")
+        print(f"Added quantity: {data['quantity']}")
         print(f"New available quantity: {new_quantity}")
         print(f"eBay item ID: {existing['offerId']}")
         return
