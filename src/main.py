@@ -4,7 +4,7 @@ import json
 
 from src.ebay import EbayClient
 from src.repricer import build_repricing_plan, load_config
-from src.reporting import build_report, print_report, save_report
+from src.reporting import build_report, print_report, save_report, save_report_page
 
 
 def load_local_listings():
@@ -18,6 +18,9 @@ def main():
     report = build_report()
     dry_run = config["runtime"].get("dry_run", True)
     environment = os.environ.get("EBAY_ENVIRONMENT", "production")
+
+    report["environment"] = environment
+    report["dry_run"] = dry_run
 
     has_credentials = all(
         os.environ.get(name)
@@ -53,6 +56,7 @@ def main():
 
     report_path = Path("reports/latest.json")
     save_report(report, report_path)
+    save_report_page(report, Path("index.html"))
     print_report(report)
 
 
