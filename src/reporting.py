@@ -86,12 +86,12 @@ def print_report(report):
     if report["changes"]:
         print("\nPRICE CHANGES")
         for change in report["changes"]:
-            print("- " + change["sku"] + ": $" + change["old_price"] + " -> $" + change["new_price"])
+            print("- " + str(change.get("sku")) + ": $" + str(change.get("old_price")) + " -> $" + str(change.get("new_price")))
     if report["skips"]:
         print("\nSKIPPED")
         for skip in report["skips"]:
-            print("- " + skip["sku"] + ": " + skip["reason"])
+            print("- " + str(skip.get("sku")) + ": " + str(skip.get("reason")))
     if report["errors_detail"]:
         print("\nERRORS")
         for error in report["errors_detail"]:
-            print("- " + error["sku"] + ": " + error["reason"])
+            print("- " + str(error.get("sku")) + ": " + str(error.get("reason")))
