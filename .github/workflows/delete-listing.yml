@@ -1,0 +1,46 @@
+name: Delete Sandbox Listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      item_id:
+        description: "eBay Item ID to end"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  delete-listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Delete Sandbox listing
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+          EBAY_ENVIRONMENT: sandbox
+          EBAY_ITEM_ID: ${{ inputs.item_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from src.ebay import EbayClient
+
+          item_id = os.environ["EBAY_ITEM_ID"].strip()
+          if not item_id.isdigit():
+              raise SystemExit("Item ID must contain only digits.")
+
+          client = EbayClient("sandbox")
+          client.delete_listing(item_id)
+          print(f"Sandbox listing {item_id} deleted.")
+          PY
