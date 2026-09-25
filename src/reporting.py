@@ -71,7 +71,7 @@ section{{margin-top:28px}} code{{font-family:monospace}}
 {section("Price Changes",["SKU","Old Price","New Price"],rows)}
 {section("Skipped Listings",["SKU","Reason"],skip_rows)}
 {section("Errors",["SKU","Reason"],error_rows)}
-<p><a href="privacy.html">Privacy</a> | <a href="oauth-callback.html">OAuth Callback</a></p>
+<p><a href="manage.html">Manage Listings</a> | <a href="privacy.html">Privacy</a> | <a href="oauth-callback.html">OAuth Callback</a></p>
 </body></html>"""
     path.write_text(html, encoding="utf-8")
 
