@@ -182,6 +182,8 @@ class EbayClient:
 
                     item_id = self._text(item, "ItemID")
                     title = self._text(item, "Title", "")
+                    if not item_id:
+                        continue
                     quantity = int(self._text(item, "Quantity", "0") or 0)
                     quantity_sold = int(
                         self._text(
@@ -222,6 +224,7 @@ class EbayClient:
                                 "title": title,
                                 "itemId": item_id,
                                 "offerId": item_id,
+                                "listingId": item_id,
                                 "listing": {
                                     "listingId": item_id,
                                     "listingStatus": "ACTIVE",
@@ -246,6 +249,7 @@ class EbayClient:
                             "title": title,
                             "itemId": item_id,
                             "offerId": item_id,
+                            "listingId": item_id,
                             "listing": {
                                 "listingId": item_id,
                                 "listingStatus": "ACTIVE",
