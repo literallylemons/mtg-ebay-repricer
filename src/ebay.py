@@ -290,6 +290,19 @@ class EbayClient:
         return root
 
 
+    def delete_listing(self, item_id, *, ending_reason="NotAvailable"):
+        if not item_id:
+            raise ValueError("eBay item ID is required.")
+        ending = ET.Element("ItemID")
+        ending.text = str(item_id)
+        reason = ET.Element("EndingReason")
+        reason.text = ending_reason
+        root = self._trading_request("EndFixedPriceItem", [ending, reason])
+        ack = self._text(root, "Ack", "Failure")
+        if ack not in {"Success", "Warning"}:
+            raise EbayError(f"eBay listing deletion failed for item {item_id}.")
+        return root
+
     def create_fixed_price_listing(
         self,
         *,
