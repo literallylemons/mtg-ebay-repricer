@@ -304,7 +304,7 @@ class EbayClient:
         condition_descriptor_value,
         postal_code="98102",
         location="Seattle, Washington",
-        shipping_service="US_eBayStandardEnvelope",
+        shipping_service="USPSFirstClass",
         shipping_cost="0.00",
         additional_shipping_cost="0.00",
     ):
