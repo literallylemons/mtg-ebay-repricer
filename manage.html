@@ -11,13 +11,21 @@ a.button{display:inline-block;padding:12px 16px;border-radius:6px;background:#22
 code{font-family:monospace}
 </style>
 </head>
-<body>\n<nav><a href="index.html">Repricer Report</a> | <a href="manage.html">Manage Listings</a> | <a href="privacy.html">Privacy</a> | <a href="oauth-callback.html">OAuth Callback</a></nav>
+<body>
+<nav><a href="index.html">Repricer Report</a> | <a href="manage.html">Manage Listings</a> | <a href="privacy.html">Privacy</a> | <a href="oauth-callback.html">OAuth Callback</a></nav>
 <h1>Manage MTG eBay Listings</h1>
 <p>This page provides management actions for the eBay Sandbox account.</p>
 
 <div class="box">
 <h2>Delete a Sandbox listing</h2>
-<p>Enter the eBay Item ID in the protected GitHub Actions workflow. The workflow uses the stored eBay credentials and ends the listing through eBay's API. Your eBay credentials are never placed in this website.</p>
+<p>You no longer need to know the eBay Item ID for every listing.</p>
+<p>Use the protected GitHub Actions workflow and choose one of these identifiers:</p>
+<ul>
+<li><strong>ITEM_ID:</strong> use the eBay Item ID if you know it.</li>
+<li><strong>SKU:</strong> use the program SKU, such as <code>PIP-11-NORMAL-NM</code>, for listings created by this program.</li>
+<li><strong>TITLE:</strong> use the exact eBay listing title for older listings that do not have a program SKU.</li>
+</ul>
+<p>For SKU and title searches, the workflow retrieves your active Sandbox fixed-price listings, finds the matching listing, and then ends it. If more than one listing matches, nothing is deleted.</p>
 <p><a class="button" href="https://github.com/literallylemons/mtg-ebay-repricer/actions/workflows/delete-listing.yml" target="_blank" rel="noopener">Open Delete Listing</a></p>
 </div>
 
