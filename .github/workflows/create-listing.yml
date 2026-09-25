@@ -1,0 +1,59 @@
+name: Create Sandbox Listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      set:
+        description: "Scryfall set code, for example PIP"
+        required: true
+        type: string
+      card_number:
+        description: "Scryfall collector number, for example 11"
+        required: true
+        type: string
+      finish:
+        description: "Card finish"
+        required: true
+        type: choice
+        options: [NORMAL, FOIL]
+      condition:
+        description: "Card condition"
+        required: true
+        type: choice
+        options: [NM, LP, HP, D]
+      language:
+        description: "Scryfall language code, for example en"
+        required: true
+        default: en
+        type: string
+      quantity:
+        description: "Quantity to add"
+        required: true
+        default: "1"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create-listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Create or increase Sandbox listing
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+          EBAY_ENVIRONMENT: sandbox
+          CARD_SET: ${{ inputs.set }}
+          CARD_NUMBER: ${{ inputs.card_number }}
+          CARD_FINISH: ${{ inputs.finish }}
+          CARD_CONDITION: ${{ inputs.condition }}
+          CARD_LANGUAGE: ${{ inputs.language }}
+          CARD_QUANTITY: ${{ inputs.quantity }}
+        run: python -m src.create_listing
