@@ -3,8 +3,16 @@ name: Delete Sandbox Listing
 on:
   workflow_dispatch:
     inputs:
-      item_id:
-        description: "eBay Item ID to end"
+      identifier_type:
+        description: "How to identify the listing"
+        required: true
+        type: choice
+        options:
+          - ITEM_ID
+          - SKU
+          - TITLE
+      identifier:
+        description: "Item ID, SKU, or exact eBay listing title"
         required: true
         type: string
 
@@ -30,17 +38,71 @@ jobs:
           EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
           EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
           EBAY_ENVIRONMENT: sandbox
-          EBAY_ITEM_ID: ${{ inputs.item_id }}
+          EBAY_IDENTIFIER_TYPE: ${{ inputs.identifier_type }}
+          EBAY_IDENTIFIER: ${{ inputs.identifier }}
         run: |
           python - <<'PY'
           import os
           from src.ebay import EbayClient
 
-          item_id = os.environ["EBAY_ITEM_ID"].strip()
-          if not item_id.isdigit():
-              raise SystemExit("Item ID must contain only digits.")
+          identifier_type = os.environ["EBAY_IDENTIFIER_TYPE"].strip().upper()
+          identifier = os.environ["EBAY_IDENTIFIER"].strip()
+
+          if not identifier:
+              raise SystemExit("Identifier cannot be empty.")
 
           client = EbayClient("sandbox")
-          client.delete_listing(item_id)
-          print(f"Sandbox listing {item_id} deleted.")
+
+          if identifier_type == "ITEM_ID":
+              if not identifier.isdigit():
+                  raise SystemExit("Item ID must contain only digits.")
+              client.delete_listing(item_id=identifier)
+              print(f"Sandbox listing {identifier} deleted.")
+              raise SystemExit(0)
+
+          listings = client.get_active_offers()
+
+          if identifier_type == "SKU":
+              matches = [
+                  listing for listing in listings
+                  if str(listing.get("sku") or "").strip().upper() == identifier.upper()
+              ]
+          elif identifier_type == "TITLE":
+              matches = [
+                  listing for listing in listings
+                  if str(listing.get("title") or "").strip() == identifier
+              ]
+          else:
+              raise SystemExit(f"Unsupported identifier type: {identifier_type}")
+
+          if not matches:
+              raise SystemExit(
+                  f"No active Sandbox listing found with {identifier_type} "
+                  f"'{identifier}'."
+              )
+
+          if len(matches) > 1:
+              print(f"Found {len(matches)} matching listings:")
+              for listing in matches:
+                  item_id = listing.get("itemId") or listing.get("offerId")
+                  print(
+                      f"  Item ID: {item_id}, "
+                      f"SKU: {listing.get('sku') or '(none)'}, "
+                      f"Title: {listing.get('title') or '(none)'}"
+                  )
+              raise SystemExit(
+                  "More than one listing matched. No listing was deleted."
+              )
+
+          listing = matches[0]
+          item_id = listing.get("itemId") or listing.get("offerId")
+          if not item_id:
+              raise SystemExit("Matched listing has no Item ID.")
+
+          client.delete_listing(item_id=item_id)
+          print(
+              f"Sandbox listing deleted. Item ID: {item_id}; "
+              f"SKU: {listing.get('sku') or '(none)'}; "
+              f"Title: {listing.get('title') or '(none)'}"
+          )
           PY
