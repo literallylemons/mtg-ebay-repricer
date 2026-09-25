@@ -79,15 +79,32 @@ def normalize_ebay_offer(offer):
     price = offer.get("pricingSummary", {}).get("price", {})
     listing = offer.get("listing", {})
 
-    item_id = str(offer.get("itemId") or "")
-    offer_id = str(offer.get("offerId") or "")
-    listing_id = str(listing.get("listingId") or "")
+    item_id = str(
+        offer.get("itemId")
+        or offer.get("itemID")
+        or offer.get("ItemID")
+        or ""
+    )
+    offer_id = str(
+        offer.get("offerId")
+        or offer.get("offerID")
+        or ""
+    )
+    listing_id = str(
+        offer.get("listingId")
+        or listing.get("listingId")
+        or listing.get("itemId")
+        or ""
+    )
 
     if not listing_id:
         listing_id = item_id or offer_id
 
     if not offer_id:
         offer_id = item_id or listing_id
+
+    if not item_id:
+        item_id = listing_id or offer_id
 
     return {
         "sku": sku,
