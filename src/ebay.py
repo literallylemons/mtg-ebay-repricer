@@ -288,3 +288,105 @@ class EbayClient:
         if ack not in {"Success", "Warning"}:
             raise EbayError(f"eBay price update failed for item {offer_id}.")
         return root
+
+
+    def create_fixed_price_listing(
+        self,
+        *,
+        sku,
+        title,
+        description,
+        category_id,
+        price,
+        quantity,
+        image_url,
+        item_specifics,
+        condition_descriptor_value,
+        postal_code="98102",
+        location="Seattle, Washington",
+        shipping_service="US_eBayStandardEnvelope",
+        shipping_cost="0.00",
+        additional_shipping_cost="0.00",
+    ):
+        if quantity < 1:
+            raise ValueError("Quantity must be at least 1.")
+        if not sku:
+            raise ValueError("SKU is required.")
+        if not image_url or not image_url.startswith("https://"):
+            raise ValueError("A valid HTTPS image URL is required.")
+
+        item = ET.Element("Item")
+        ET.SubElement(item, "Country").text = "US"
+        ET.SubElement(item, "Currency").text = "USD"
+        ET.SubElement(item, "Description").text = description
+        ET.SubElement(item, "DispatchTimeMax").text = "1"
+        ET.SubElement(item, "ListingDuration").text = "GTC"
+        ET.SubElement(item, "ListingType").text = "FixedPriceItem"
+        ET.SubElement(item, "Location").text = location
+        ET.SubElement(item, "PostalCode").text = postal_code
+        ET.SubElement(item, "Quantity").text = str(quantity)
+        ET.SubElement(item, "SKU").text = sku
+        ET.SubElement(item, "InventoryTrackingMethod").text = "SKU"
+        ET.SubElement(item, "StartPrice").text = f"{float(price):.2f}"
+        ET.SubElement(item, "CategoryMappingAllowed").text = "true"
+
+        primary_category = ET.SubElement(item, "PrimaryCategory")
+        ET.SubElement(primary_category, "CategoryID").text = str(category_id)
+
+        ET.SubElement(item, "Title").text = title
+        ET.SubElement(item, "ConditionID").text = "4000"
+
+        condition_descriptors = ET.SubElement(item, "ConditionDescriptors")
+        descriptor = ET.SubElement(condition_descriptors, "ConditionDescriptor")
+        ET.SubElement(descriptor, "Name").text = "40001"
+        ET.SubElement(descriptor, "Value").text = str(condition_descriptor_value)
+
+        specifics = ET.SubElement(item, "ItemSpecifics")
+        for name, value in item_specifics.items():
+            if value is None or value == "":
+                continue
+            pair = ET.SubElement(specifics, "NameValueList")
+            ET.SubElement(pair, "Name").text = str(name)
+            ET.SubElement(pair, "Value").text = str(value)
+
+        picture_details = ET.SubElement(item, "PictureDetails")
+        ET.SubElement(picture_details, "PictureSource").text = "Vendor"
+        ET.SubElement(picture_details, "PictureURL").text = image_url
+
+        shipping = ET.SubElement(item, "ShippingDetails")
+        ET.SubElement(shipping, "ShippingType").text = "Flat"
+        option = ET.SubElement(shipping, "ShippingServiceOptions")
+        ET.SubElement(option, "ShippingServicePriority").text = "1"
+        ET.SubElement(option, "ShippingService").text = shipping_service
+        ET.SubElement(option, "ShippingServiceCost").text = shipping_cost
+        ET.SubElement(option, "ShippingServiceAdditionalCost").text = additional_shipping_cost
+
+        return_policy = ET.SubElement(item, "ReturnPolicy")
+        ET.SubElement(return_policy, "ReturnsAcceptedOption").text = "ReturnsNotAccepted"
+
+        root = self._trading_request("AddFixedPriceItem", [item])
+        ns = "{urn:ebay:apis:eBLBaseComponents}"
+        item_id = self._text(root, "ItemID")
+        if not item_id:
+            raise EbayError("eBay created the listing but did not return an ItemID.")
+        return {
+            "item_id": item_id,
+            "sku": self._text(root, "SKU", sku),
+            "start_time": self._text(root, "StartTime"),
+            "end_time": self._text(root, "EndTime"),
+        }
+
+    def update_quantity(self, item_id, quantity, sku=None):
+        if quantity < 0:
+            raise ValueError("Quantity cannot be negative.")
+        inventory_status = ET.Element("InventoryStatus")
+        ET.SubElement(inventory_status, "ItemID").text = str(item_id)
+        if sku:
+            ET.SubElement(inventory_status, "SKU").text = sku
+        ET.SubElement(inventory_status, "Quantity").text = str(quantity)
+
+        root = self._trading_request("ReviseInventoryStatus", [inventory_status])
+        ack = self._text(root, "Ack", "Failure")
+        if ack not in {"Success", "Warning"}:
+            raise EbayError(f"eBay quantity update failed for item {item_id}.")
+        return root
