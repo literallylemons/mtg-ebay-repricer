@@ -181,6 +181,7 @@ class EbayClient:
                         continue
 
                     item_id = self._text(item, "ItemID")
+                    title = self._text(item, "Title", "")
                     quantity = int(self._text(item, "Quantity", "0") or 0)
                     quantity_sold = int(
                         self._text(
@@ -218,6 +219,8 @@ class EbayClient:
                             )
                             active.append({
                                 "sku": sku,
+                                "title": title,
+                                "itemId": item_id,
                                 "offerId": item_id,
                                 "listing": {
                                     "listingId": item_id,
@@ -240,6 +243,8 @@ class EbayClient:
                         sku = self._text(item, "SKU")
                         active.append({
                             "sku": sku,
+                            "title": title,
+                            "itemId": item_id,
                             "offerId": item_id,
                             "listing": {
                                 "listingId": item_id,
@@ -290,17 +295,17 @@ class EbayClient:
         return root
 
 
-    def delete_listing(self, item_id, *, ending_reason="NotAvailable"):
-        if not item_id:
-            raise ValueError("eBay item ID is required.")
-        ending = ET.Element("ItemID")
-        ending.text = str(item_id)
+    def delete_listing(self, item_id=None, sku=None, *, ending_reason="NotAvailable"):
+        if not item_id and not sku:
+            raise ValueError("Either eBay item ID or SKU is required.")
+        identifier = ET.Element("ItemID" if item_id else "SKU")
+        identifier.text = str(item_id or sku)
         reason = ET.Element("EndingReason")
         reason.text = ending_reason
-        root = self._trading_request("EndFixedPriceItem", [ending, reason])
+        root = self._trading_request("EndFixedPriceItem", [identifier, reason])
         ack = self._text(root, "Ack", "Failure")
         if ack not in {"Success", "Warning"}:
-            raise EbayError(f"eBay listing deletion failed for item {item_id}.")
+            raise EbayError("eBay listing deletion failed.")
         return root
 
     def create_fixed_price_listing(
