@@ -1,18 +1,10 @@
-name: Delete Sandbox Listing
+name: Delete Sandbox Listings
 
 on:
   workflow_dispatch:
     inputs:
-      identifier_type:
-        description: "How to identify the listing"
-        required: true
-        type: choice
-        options:
-          - ITEM_ID
-          - SKU
-          - TITLE
-      identifier:
-        description: "Item ID, SKU, or exact eBay listing title"
+      delete_all:
+        description: "Type DELETE ALL to end every active fixed-price Sandbox listing"
         required: true
         type: string
 
@@ -20,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  delete-listing:
+  delete-listings:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,77 +24,62 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Delete Sandbox listing
+      - name: Delete all Sandbox listings
         env:
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
           EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
           EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
           EBAY_ENVIRONMENT: sandbox
-          EBAY_IDENTIFIER_TYPE: ${{ inputs.identifier_type }}
-          EBAY_IDENTIFIER: ${{ inputs.identifier }}
+          DELETE_ALL: ${{ inputs.delete_all }}
         run: |
           python - <<'PY'
           import os
           from src.ebay import EbayClient
 
-          identifier_type = os.environ["EBAY_IDENTIFIER_TYPE"].strip().upper()
-          identifier = os.environ["EBAY_IDENTIFIER"].strip()
-
-          if not identifier:
-              raise SystemExit("Identifier cannot be empty.")
+          confirmation = os.environ["DELETE_ALL"].strip()
+          if confirmation != "DELETE ALL":
+              raise SystemExit(
+                  'Nothing was deleted. The confirmation must be exactly "DELETE ALL".'
+              )
 
           client = EbayClient("sandbox")
-
-          if identifier_type == "ITEM_ID":
-              if not identifier.isdigit():
-                  raise SystemExit("Item ID must contain only digits.")
-              client.delete_listing(item_id=identifier)
-              print(f"Sandbox listing {identifier} deleted.")
-              raise SystemExit(0)
-
           listings = client.get_active_offers()
 
-          if identifier_type == "SKU":
-              matches = [
-                  listing for listing in listings
-                  if str(listing.get("sku") or "").strip().upper() == identifier.upper()
-              ]
-          elif identifier_type == "TITLE":
-              matches = [
-                  listing for listing in listings
-                  if str(listing.get("title") or "").strip() == identifier
-              ]
-          else:
-              raise SystemExit(f"Unsupported identifier type: {identifier_type}")
+          item_ids = []
+          seen = set()
+          for listing in listings:
+              item_id = str(
+                  listing.get("itemId")
+                  or listing.get("offerId")
+                  or listing.get("listing", {}).get("listingId")
+                  or ""
+              ).strip()
+              if item_id and item_id not in seen:
+                  seen.add(item_id)
+                  item_ids.append(item_id)
 
-          if not matches:
+          if not item_ids:
+              print("No active fixed-price Sandbox listings found.")
+              raise SystemExit(0)
+
+          print(f"Found {len(item_ids)} active fixed-price Sandbox listing(s).")
+
+          failures = []
+          for item_id in item_ids:
+              try:
+                  client.delete_listing(item_id=item_id)
+                  print(f"Deleted Sandbox listing {item_id}.")
+              except Exception as error:
+                  failures.append((item_id, str(error)))
+                  print(f"FAILED to delete Sandbox listing {item_id}: {error}")
+
+          if failures:
+              print("\nListings that could not be deleted:")
+              for item_id, error in failures:
+                  print(f"  {item_id}: {error}")
               raise SystemExit(
-                  f"No active Sandbox listing found with {identifier_type} "
-                  f"'{identifier}'."
+                  f"{len(failures)} listing(s) could not be deleted."
               )
 
-          if len(matches) > 1:
-              print(f"Found {len(matches)} matching listings:")
-              for listing in matches:
-                  item_id = listing.get("itemId") or listing.get("offerId")
-                  print(
-                      f"  Item ID: {item_id}, "
-                      f"SKU: {listing.get('sku') or '(none)'}, "
-                      f"Title: {listing.get('title') or '(none)'}"
-                  )
-              raise SystemExit(
-                  "More than one listing matched. No listing was deleted."
-              )
-
-          listing = matches[0]
-          item_id = listing.get("itemId") or listing.get("offerId")
-          if not item_id:
-              raise SystemExit("Matched listing has no Item ID.")
-
-          client.delete_listing(item_id=item_id)
-          print(
-              f"Sandbox listing deleted. Item ID: {item_id}; "
-              f"SKU: {listing.get('sku') or '(none)'}; "
-              f"Title: {listing.get('title') or '(none)'}"
-          )
+          print(f"Successfully deleted all {len(item_ids)} active Sandbox listing(s).")
           PY
