@@ -20,11 +20,11 @@ def main():
         new_quantity = current_quantity + data["quantity"]
         client.update_quantity(existing["offerId"], new_quantity, sku=data["sku"])
         print("Existing Sandbox listing found.")
-        print(f"SKU: {data["sku"]}")
+        print(f"SKU: {data['sku']}")
         print(f"Existing available quantity: {current_quantity}")
         print(f"Added quantity: {data["quantity"]}")
         print(f"New available quantity: {new_quantity}")
-        print(f"eBay item ID: {existing["offerId"]}")
+        print(f"eBay item ID: {existing['offerId']}")
         return
 
     result = client.create_fixed_price_listing(
@@ -34,13 +34,13 @@ def main():
         condition_descriptor_value=data["condition_descriptor_value"],
     )
     print("New Sandbox listing created.")
-    print(f"SKU: {data["sku"]}")
-    print(f"Card: {data["card"].get("name")}")
-    print(f"Set: {data["card"].get("set_name")}")
-    print(f"Scryfall market price: ${data["market_price"]:.2f}")
-    print(f"eBay listing price: ${data["price"]:.2f}")
-    print(f"Quantity: {data["quantity"]}")
-    print(f"eBay item ID: {result["item_id"]}")
+    print(f"SKU: {data['sku']}")
+    print(f"Card: {data['card'].get('name')}")
+    print(f"Set: {data['card'].get('set_name')}")
+    print(f"Scryfall market price: ${data['market_price']:.2f}")
+    print(f"eBay listing price: ${data['price']:.2f}")
+    print(f"Quantity: {data['quantity']}")
+    print(f"eBay item ID: {result['item_id']}")
 
 if __name__ == "__main__":
     main()
