@@ -281,6 +281,63 @@ class EbayClient:
                 return active
             page_number += 1
 
+    def get_all_active_listings(self):
+        listings = []
+        page_number = 1
+
+        while True:
+            active_list = ET.Element("ActiveList")
+            ET.SubElement(active_list, "Include").text = "true"
+            ET.SubElement(active_list, "IncludeNotes").text = "false"
+            pagination = ET.SubElement(active_list, "Pagination")
+            ET.SubElement(pagination, "EntriesPerPage").text = "200"
+            ET.SubElement(pagination, "PageNumber").text = str(page_number)
+
+            root = self._trading_request("GetMyeBaySelling", [active_list])
+            ns = "{urn:ebay:apis:eBLBaseComponents}"
+            item_array = root.find(f"{ns}ActiveList/{ns}ItemArray")
+
+            if item_array is not None:
+                for item in item_array.findall(f"{ns}Item"):
+                    item_id = self._text(item, "ItemID")
+                    if not item_id:
+                        continue
+                    listings.append({
+                        "item_id": item_id,
+                        "listing_type": self._text(item, "ListingType", ""),
+                        "title": self._text(item, "Title", ""),
+                        "sku": self._text(item, "SKU", ""),
+                    })
+
+            pagination_result = root.find(
+                f"{ns}ActiveList/{ns}PaginationResult"
+            )
+            total_pages = int(
+                self._text(
+                    pagination_result,
+                    "TotalNumberOfPages",
+                    "1",
+                )
+                or 1
+            ) if pagination_result is not None else 1
+
+            if page_number >= total_pages:
+                return listings
+            page_number += 1
+
+    def end_item(self, item_id, *, ending_reason="NotAvailable"):
+        if not item_id:
+            raise ValueError("eBay item ID is required.")
+        item = ET.Element("ItemID")
+        item.text = str(item_id)
+        reason = ET.Element("EndingReason")
+        reason.text = ending_reason
+        root = self._trading_request("EndItem", [item, reason])
+        ack = self._text(root, "Ack", "Failure")
+        if ack not in {"Success", "Warning"}:
+            raise EbayError(f"eBay listing deletion failed for item {item_id}.")
+        return root
+
     def update_price(self, offer_id, price, currency="USD", sku=None):
         inventory_status = ET.Element("InventoryStatus")
         ET.SubElement(inventory_status, "ItemID").text = str(offer_id)
