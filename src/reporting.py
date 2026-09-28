@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import json
 from html import escape
 
+
 def build_report():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -10,14 +11,17 @@ def build_report():
         "no_changes": 0,
         "skipped": 0,
         "errors": 0,
+        "current_listings": [],
         "changes": [],
         "skips": [],
         "errors_detail": [],
     }
 
+
 def save_report(report, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
 
 def save_report_page(report, path):
     def money(value):
@@ -26,6 +30,14 @@ def save_report_page(report, path):
         except (TypeError, ValueError):
             return escape(str(value))
 
+    current_rows = "".join(
+        f"<tr><td><code>{escape(str(x.get('sku', '')))}</code></td>"
+        f"<td>{escape(str(x.get('title', '')))}</td>"
+        f"<td><code>{escape(str(x.get('item_id', '')))}</code></td>"
+        f"<td>{money(x.get('price'))}</td>"
+        f"<td>{escape(str(x.get('available_quantity', '')))}</td></tr>"
+        for x in report["current_listings"]
+    )
     rows = "".join(
         f"<tr><td><code>{escape(str(x.get('sku','')))}</code></td><td>{money(x.get('old_price'))}</td><td>{money(x.get('new_price'))}</td></tr>"
         for x in report["changes"]
@@ -63,11 +75,13 @@ section{{margin-top:28px}} code{{font-family:monospace}}
 <p><strong>Last run:</strong> {escape(report["generated_at"])}</p>
 <div class="stats">
 <div class="stat"><span class="num">{report["listings_checked"]}</span>Listings Checked</div>
+<div class="stat"><span class="num">{report["current_listings"] and len(report["current_listings"]) or 0}</span>Current Listings</div>
 <div class="stat"><span class="num">{report["price_changes"]}</span>Price Changes</div>
 <div class="stat"><span class="num">{report["no_changes"]}</span>No Changes</div>
 <div class="stat"><span class="num">{report["skipped"]}</span>Skipped</div>
 <div class="stat"><span class="num">{report["errors"]}</span>Errors</div>
 </div>
+{section("Current Active Listings",["SKU","Title","eBay Item ID","Current Price","Available Qty"],current_rows)}
 {section("Price Changes",["SKU","Old Price","New Price"],rows)}
 {section("Skipped Listings",["SKU","Reason"],skip_rows)}
 {section("Errors",["SKU","Reason"],error_rows)}
@@ -75,10 +89,12 @@ section{{margin-top:28px}} code{{font-family:monospace}}
 </body></html>"""
     path.write_text(html, encoding="utf-8")
 
+
 def print_report(report):
     print("MTG eBay Repricer Report")
     print("Generated: " + report["generated_at"])
     print("Listings checked: " + str(report["listings_checked"]))
+    print("Current listings: " + str(len(report["current_listings"])))
     print("Price changes: " + str(report["price_changes"]))
     print("No changes: " + str(report["no_changes"]))
     print("Skipped: " + str(report["skipped"]))
