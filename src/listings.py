@@ -112,6 +112,7 @@ def normalize_ebay_offer(offer):
         "collector_number": parsed["number"],
         "finish": parsed["finish"],
         "condition": parsed["condition"],
+        "item_id": item_id,
         "offer_id": offer_id,
         "listing_id": listing_id,
         "listing_status": listing.get("listingStatus"),
