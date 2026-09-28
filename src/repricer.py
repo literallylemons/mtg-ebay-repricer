@@ -45,8 +45,15 @@ def build_repricing_plan(offers, config):
     for offer in valid:
         try:
             listing = prepare_listing(offer)
-            ebay_item_id = str(\n                offer.get("itemId")\n                or offer.get("itemID")\n                or offer.get("ItemID")\n                or offer.get("listingId")\n                or listing.get("listing_id")\n                or listing.get("offer_id")\n                or ""\n            ).strip()
-            if not ebay_item_id:
+            ebay_item_id = str(
+                offer.get("itemId")
+                or offer.get("itemID")
+                or offer.get("ItemID")
+                or offer.get("listingId")
+                or listing.get("listing_id")
+                or listing.get("offer_id")
+                or ""
+            ).strip()
                 report["skips"].append({"sku": listing["sku"], "reason": "Missing eBay Item ID."})
                 continue
             if listing["current_price"] is None:
