@@ -80,18 +80,21 @@ def normalize_ebay_offer(offer):
     listing = offer.get("listing", {})
 
     item_id = str(
-        offer.get("itemId")
+        offer.get("item_id")
+        or offer.get("itemId")
         or offer.get("itemID")
         or offer.get("ItemID")
         or ""
     )
     offer_id = str(
-        offer.get("offerId")
+        offer.get("offer_id")
+        or offer.get("offerId")
         or offer.get("offerID")
         or ""
     )
     listing_id = str(
-        offer.get("listingId")
+        offer.get("listing_id")
+        or offer.get("listingId")
         or listing.get("listingId")
         or listing.get("itemId")
         or ""
