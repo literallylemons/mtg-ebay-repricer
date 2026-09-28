@@ -45,8 +45,9 @@ def build_repricing_plan(offers, config):
     for offer in valid:
         try:
             listing = prepare_listing(offer)
-            if not listing["offer_id"]:
-                report["skips"].append({"sku": listing["sku"], "reason": "Missing eBay offer ID."})
+            ebay_item_id = listing.get("listing_id") or listing.get("offer_id")
+            if not ebay_item_id:
+                report["skips"].append({"sku": listing["sku"], "reason": "Missing eBay Item ID."})
                 continue
             if listing["current_price"] is None:
                 report["skips"].append({"sku": listing["sku"], "reason": "Current eBay price is missing."})
@@ -57,7 +58,7 @@ def build_repricing_plan(offers, config):
                 report["no_changes"].append({"sku": listing["sku"], "price": str(current_price)})
                 continue
             report["updates"].append({
-                "sku": listing["sku"], "offer_id": listing["offer_id"], "listing_id": listing["listing_id"],
+                "sku": listing["sku"], "offer_id": ebay_item_id, "listing_id": ebay_item_id,
                 "currency": listing["currency"] or config["runtime"]["currency"],
                 "old_price": str(current_price), "new_price": str(new_price),
                 "market_price": listing["market_price"],
