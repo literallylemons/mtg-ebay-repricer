@@ -42,6 +42,7 @@ def build_repricing_plan(offers, config):
     report = {"updates": [], "no_changes": [], "skips": [], "errors": []}
     valid, validation_errors = validate_ebay_offers(offers)
     report["errors"].extend(validation_errors)
+
     for offer in valid:
         try:
             listing = prepare_listing(offer)
@@ -54,22 +55,44 @@ def build_repricing_plan(offers, config):
                 or listing.get("offer_id")
                 or ""
             ).strip()
-                report["skips"].append({"sku": listing["sku"], "reason": "Missing eBay Item ID."})
+
+            if not ebay_item_id:
+                report["skips"].append({
+                    "sku": listing["sku"],
+                    "reason": "Missing eBay Item ID.",
+                })
                 continue
+
             if listing["current_price"] is None:
-                report["skips"].append({"sku": listing["sku"], "reason": "Current eBay price is missing."})
+                report["skips"].append({
+                    "sku": listing["sku"],
+                    "reason": "Current eBay price is missing.",
+                })
                 continue
+
             new_price = calculate_listing_price(listing, config)
             current_price = calculate_price(listing["current_price"], 1, 0)
+
             if current_price == new_price:
-                report["no_changes"].append({"sku": listing["sku"], "price": str(current_price)})
+                report["no_changes"].append({
+                    "sku": listing["sku"],
+                    "price": str(current_price),
+                })
                 continue
+
             report["updates"].append({
-                "sku": listing["sku"], "offer_id": ebay_item_id, "listing_id": ebay_item_id,
+                "sku": listing["sku"],
+                "offer_id": ebay_item_id,
+                "listing_id": ebay_item_id,
                 "currency": listing["currency"] or config["runtime"]["currency"],
-                "old_price": str(current_price), "new_price": str(new_price),
+                "old_price": str(current_price),
+                "new_price": str(new_price),
                 "market_price": listing["market_price"],
             })
         except Exception as error:
-            report["errors"].append({"sku": offer.get("sku", "<missing>"), "reason": str(error)})
+            report["errors"].append({
+                "sku": offer.get("sku", "<missing>"),
+                "reason": str(error),
+            })
+
     return report
