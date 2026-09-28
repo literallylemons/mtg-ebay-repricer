@@ -43,31 +43,26 @@ jobs:
               )
 
           client = EbayClient("sandbox")
-          listings = client.get_active_offers()
+          listings = client.get_all_active_listings()
 
           item_ids = []
           seen = set()
           for listing in listings:
-              item_id = str(
-                  listing.get("itemId")
-                  or listing.get("offerId")
-                  or listing.get("listing", {}).get("listingId")
-                  or ""
-              ).strip()
+              item_id = str(listing.get("item_id") or "").strip()
               if item_id and item_id not in seen:
                   seen.add(item_id)
                   item_ids.append(item_id)
 
           if not item_ids:
-              print("No active fixed-price Sandbox listings found.")
+              print("No active Sandbox listings found.")
               raise SystemExit(0)
 
-          print(f"Found {len(item_ids)} active fixed-price Sandbox listing(s).")
+          print(f"Found {len(item_ids)} active Sandbox listing(s).")
 
           failures = []
           for item_id in item_ids:
               try:
-                  client.delete_listing(item_id=item_id)
+                  client.end_item(item_id)
                   print(f"Deleted Sandbox listing {item_id}.")
               except Exception as error:
                   failures.append((item_id, str(error)))
