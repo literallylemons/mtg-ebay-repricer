@@ -38,6 +38,20 @@ def main():
         raise RuntimeError("eBay credentials are required when dry_run is false.")
 
     plan = build_repricing_plan(offers, config)
+    report["current_listings"] = [
+        {
+            "sku": offer.get("sku"),
+            "title": offer.get("title"),
+            "item_id": offer.get("itemId") or offer.get("listingId") or offer.get("offerId"),
+            "price": (
+                offer.get("pricingSummary", {})
+                .get("price", {})
+                .get("value")
+            ),
+            "available_quantity": offer.get("availableQuantity"),
+        }
+        for offer in offers
+    ]
     report["listings_checked"] = len(offers)
     report["price_changes"] = len(plan["updates"])
     report["no_changes"] = len(plan["no_changes"])
